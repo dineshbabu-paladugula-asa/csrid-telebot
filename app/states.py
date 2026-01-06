@@ -1,0 +1,1 @@
+RATING, FEEDBACK, RECOMMEND = range(3)
