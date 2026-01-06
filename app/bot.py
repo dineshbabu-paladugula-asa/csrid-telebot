@@ -3,12 +3,44 @@ from telegram.ext import ContextTypes, ConversationHandler
 from app.states import RATING, FEEDBACK, RECOMMEND
 from app.storage import storage
 import logging
+import requests
+from datetime import datetime, timezone
+from app.settings import CSRID_API_URL
 
 # Enable logging
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
 )
 logger = logging.getLogger(__name__)
+
+def send_to_csrid(chat_id, data):
+    """Sends survey results to external API."""
+    if not CSRID_API_URL:
+        print("CSRID_API_URL not set, skipping API call.")
+        return
+
+    # specific conversion for recommend boolean
+    recommend_str = "Yes" if data.get("recommend") else "No"
+    
+    text_content = (
+        f"Rating: {data.get('rating')}. "
+        f"Feedback: {data.get('feedback')}. "
+        f"Recommend: {recommend_str}"
+    )
+
+    payload = {
+        "customer_id": f"TG_{chat_id}",
+        "channel": "telegram",
+        "text": text_content,
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    }
+
+    try:
+        response = requests.post(CSRID_API_URL, json=payload)
+        response.raise_for_status()
+        print(f"Successfully sent data for {chat_id}: {response.status_code}")
+    except Exception as e:
+        print(f"Failed to send data for {chat_id}: {e}")
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Starts the conversation and asks for rating."""
@@ -61,6 +93,9 @@ async def recommend(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     # Log/Print the final data for verification
     final_data = storage.get_response(update.message.chat_id)
     logger.info(f"Survey completed for {update.message.chat_id}: {final_data}")
+    
+    # Send to CSRID API
+    send_to_csrid(update.message.chat_id, final_data)
 
     await update.message.reply_text(
         "Thank you for your time!", reply_markup=ReplyKeyboardRemove()

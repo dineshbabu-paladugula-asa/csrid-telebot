@@ -7,6 +7,7 @@ A simple Python-based Telegram bot to collect user feedback.
 - Collects text feedback
 - Collects recommendation (Yes/No)
 - Stores data in-memory
+- Forwards survey results to external CSRID API
 
 ## Prerequisites
 - Python 3.8+
@@ -38,6 +39,7 @@ A simple Python-based Telegram bot to collect user feedback.
 1. Create a `.env` file in the root directory (if not already present) and add your bot token:
    ```env
    TELEGRAM_BOT_TOKEN=your_token_here
+   CSRID_API_URL=https://your-api-url.com/interaction
    ```
    *(Note: A `.env` file with the provided token has been created for you)*
 
